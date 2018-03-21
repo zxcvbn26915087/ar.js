@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <!-- three.js library -->
-<script src='vendor/three.js/build/three.min.js'></script>
-<script src="vendor/three.js/examples/js/libs/stats.min.js"></script>
+<script src='../examples/vendor/three.js/build/three.min.js'></script>
+<script src="../examples/vendor/three.js/examples/js/libs/stats.min.js"></script>
 <!-- ar.js -->
 <script src="../build/ar.js"></script>
 <script>THREEx.ArToolkitContext.baseURL = '../'</script>
@@ -34,6 +34,7 @@
 
 	// init scene and camera
 	var scene	= new THREE.Scene();
+	
 	
 	//////////////////////////////////////////////////////////////////////////////////
 	//		Initialize a basic camera
@@ -113,7 +114,7 @@
 		patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.hiro'
 		// patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.kanji'
 	})
-
+/*
 	// build a smoothedControls
 	var smoothedRoot = new THREE.Group()
 	scene.add(smoothedRoot)
@@ -130,26 +131,38 @@
 	//////////////////////////////////////////////////////////////////////////////////
 
 	var arWorldRoot = smoothedRoot
+*/
 
 	// add a torus knot	
+
 	var geometry	= new THREE.CubeGeometry(1,1,1);
 	var material	= new THREE.MeshNormalMaterial({
-		transparent : true,
-		opacity: 0.5,
-		side: THREE.DoubleSide
+	//	transparent : true,
+	//	opacity: 0.5,
+	//	side: THREE.DoubleSide
 	}); 
 	var mesh	= new THREE.Mesh( geometry, material );
 	mesh.position.y	= geometry.parameters.height/2
-	arWorldRoot.add( mesh );
+
+//	arWorldRoot.add( mesh );
+	markerRoot.add (mesh);
+
+	/// add gridhelper
+	var gridXZ = new THREE.GridHelper(2,10);
+	markerRoot.add (gridXZ);
 	
+	//scene.add (gridXZ);
+/*		
 	var geometry	= new THREE.TorusKnotGeometry(0.3,0.1,64,16);
 	var material	= new THREE.MeshNormalMaterial(); 
 	var mesh	= new THREE.Mesh( geometry, material );
 	mesh.position.y	= 0.5
-	arWorldRoot.add( mesh );
-	
+
+//	arWorldRoot.add( mesh );
+	markerRoot.add (mesh);
+*/		
 	onRenderFcts.push(function(){
-		mesh.rotation.x += 0.1
+		//mesh.rotation.x += 0.1
 	})
 
 	//////////////////////////////////////////////////////////////////////////////////
@@ -160,6 +173,8 @@
 	// render the scene
 	onRenderFcts.push(function(){
 		renderer.render( scene, camera );
+		console.log (markerRoot.position);
+		//console.log (markerRoot.rotation)
 		stats.update();
 	})
 
