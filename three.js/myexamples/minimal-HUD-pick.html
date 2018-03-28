@@ -28,13 +28,52 @@
 	renderer.domElement.style.top = '0px'
 	renderer.domElement.style.left = '0px'
 	document.body.appendChild( renderer.domElement );
-
+	
+	// for multi-pass rendering
+	renderer.autoClear = false;
+	
+	
 	// array of functions for the rendering loop
 	var onRenderFcts= [];
 
 	// init scene and camera
 	var scene	= new THREE.Scene();
 	
+	/// for picking
+	var raycaster = new THREE.Raycaster();
+	var mouse = new THREE.Vector2();
+	var pickables = [];
+	var cubeSpin = false;
+	
+	// for HUD scene
+	var sceneHUD = new THREE.Scene();
+	var cameraHUD = new THREE.OrthographicCamera (-10,10,10,-10, -10,10);
+	var square = new THREE.Mesh (new THREE.PlaneGeometry(4,4), new THREE.MeshNormalMaterial());
+	square.position.set (6, -6, 0);
+	sceneHUD.add (square);
+	pickables.push (square);
+	
+	window.addEventListener ('mousedown', onMouseDown, false);
+	
+	function onMouseDown (event) {
+		event.preventDefault();
+  		mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  		mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  		// find intersections (only pick the HUD scene, using OrthographicCamera)  		
+  		raycaster.setFromCamera(mouse, cameraHUD);
+  					
+  		var intersects = raycaster.intersectObjects(pickables);
+  		if (intersects.length > 0) {
+			console.log ('picked')
+			cubeSpin = !cubeSpin;
+  		} else {
+  			console.log ('no hit')
+  		}
+  		
+		
+	}
+		
 	//////////////////////////////////////////////////////////////////////////////////
 	//		Initialize a basic camera
 	//////////////////////////////////////////////////////////////////////////////////
@@ -113,47 +152,35 @@
 		patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.hiro'
 		// patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.kanji'
 	})
-/*
-	// build a smoothedControls
-	var smoothedRoot = new THREE.Group()
-	scene.add(smoothedRoot)
-	var smoothedControls = new THREEx.ArSmoothedControls(smoothedRoot, {
-		lerpPosition: 0.4,
-		lerpQuaternion: 0.3,
-		lerpScale: 1,
-	})
-	onRenderFcts.push(function(delta){
-		smoothedControls.update(markerRoot)
-	})
-	//////////////////////////////////////////////////////////////////////////////////
-	//		add an object in the scene
-	//////////////////////////////////////////////////////////////////////////////////
 
-	var arWorldRoot = smoothedRoot
-*/
+	// add a cubeGeometry
 
-	// add a plane	
-	var markerWidth = 9; // will be ONE in three.js world
-	var geometry = new THREE.PlaneGeometry (30.2/markerWidth, 17.9/markerWidth);
+	var geometry	= new THREE.CubeGeometry(1,1,1);
 	var material	= new THREE.MeshNormalMaterial({
 		transparent : true,
 		opacity: 0.5,
 		side: THREE.DoubleSide
 	}); 
 	var mesh	= new THREE.Mesh( geometry, material );
-	mesh.rotation.x = -Math.PI/2;
-	mesh.position.x = -5.1/markerWidth;
-	mesh.position.z = -0.35/markerWidth;
-
+	mesh.position.y	= geometry.parameters.height/2
+	
+	//pickables.push (mesh);
 	
 //	arWorldRoot.add( mesh );
 	markerRoot.add (mesh);
-		
-		
+
+	/// add gridhelper
+	//var gridXZ = new THREE.GridHelper(2,10);
+	//markerRoot.add (gridXZ);
+	
+	//scene.add (gridXZ);
+
 	onRenderFcts.push(function(){
-//		mesh.rotation.x += 0.1
+		if (cubeSpin)
+			mesh.rotation.x += 0.1
 	})
 
+	
 	//////////////////////////////////////////////////////////////////////////////////
 	//		render the whole thing on the page
 	//////////////////////////////////////////////////////////////////////////////////
@@ -161,7 +188,12 @@
 	document.body.appendChild( stats.dom );
 	// render the scene
 	onRenderFcts.push(function(){
+		renderer.clear();
+		
 		renderer.render( scene, camera );
+		square.material.visible = markerRoot.visible;
+		renderer.render (sceneHUD, cameraHUD);
+		
 		stats.update();
 	})
 
@@ -179,4 +211,5 @@
 			onRenderFct(deltaMsec/1000, nowMsec/1000)
 		})
 	})
-</script></body>
+</script>
+</body>
