@@ -28,7 +28,11 @@
 	renderer.domElement.style.top = '0px'
 	renderer.domElement.style.left = '0px'
 	document.body.appendChild( renderer.domElement );
-
+	
+	// for multi-pass rendering
+	renderer.autoClear = false;
+	
+	
 	// array of functions for the rendering loop
 	var onRenderFcts= [];
 
@@ -39,7 +43,28 @@
 	var raycaster = new THREE.Raycaster();
 	var mouse = new THREE.Vector2();
 	var pickables = [];
-	var puck = new THREE.Mesh (new THREE.CylinderGeometry(0.13,0.13,0.041,12),new THREE.MeshNormalMaterial());
+	var cubeSpin = false;
+	
+	// for HUD scene
+	// HUD area should be 1:1 on screen
+	// use NDC for picking 
+	// (raycaster is not accurate since we cannot get the accurate position
+	// of the camera)
+	//
+	var sceneHUD = new THREE.Scene();
+	//let HoverW = window.innerHeight/window.innerWidth;
+	//var cameraHUD = new THREE.OrthographicCamera (-10,10,10*HoverW,-10*HoverW, -10,10);
+	//var square = new THREE.Mesh (new THREE.PlaneGeometry(4,4*HoverW), new THREE.MeshNormalMaterial());
+	var cameraHUD = new THREE.OrthographicCamera (-10,10,10,-10, -10,10);
+	var square = new THREE.Mesh (new THREE.PlaneGeometry(4,4), new THREE.MeshNormalMaterial());
+	
+	//console.log (HoverW)
+	square.position.set (6, -6, 0);
+	
+	
+	sceneHUD.add (square);
+	pickables.push (square);
+	
 	window.addEventListener ('mousedown', onMouseDown, false);
 	
 	function onMouseDown (event) {
@@ -47,51 +72,27 @@
   		mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   		mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-  		// find intersections
-  		
-  		// cannot use the following ...
-  		//raycaster.setFromCamera(mouse, camera);
-  		
-  		// use the following 
-  		// borrowed from Raycaster.js (for perspectiveCamera)
-  		// since the camera parameters have been set from
-  		// artoolkit (the real webcam)
-  		//
-/*
-			var Rt = new THREE.Matrix3();
-			Rt.setFromMatrix4 (camera.matrixWorld).transpose();
-			console.log (Rt)
-			var cpos = new THREE.Vector3();
-			cpos.setFromMatrixPosition (camera.matrixWorld);
-			cpos.applyMatrix3(Rt).multiplyScalar(-1);			
-*/
-
-//  		raycaster.ray.origin.setFromMatrixPosition( camera.matrixWorld );
+		console.log (mouse);
 		
-		//raycaster.ray.origin.copy (cpos);
-		//console.log ('cpos:' + cpos.x);
-	
-		// the most straightforward solution
-		// the world is viewed from eye coordinate
-		// camera is at origin	
-		raycaster.ray.origin.set (0,0,0)
-		raycaster.ray.direction.set( mouse.x, mouse.y, 0.5 ).unproject( camera ).sub( raycaster.ray.origin ).normalize();
-			
-  		var intersects = raycaster.intersectObjects(pickables);
-  		if (intersects.length > 0) {
-  		
+		// use 2D algorithm 
+		if (mouse.x < 0.8 && mouse.x > 0.4 && mouse.y < -0.4 && mouse.y > -0.8){
 			console.log ('picked')
-			console.log ('marker space: '  + intersects[0].uv.x + ',' + intersects[0].uv.y);
-			var minv = new THREE.Matrix4();
-			minv.getInverse (markerRoot.matrixWorld);
-			var vv = intersects[0].point.clone();
-			vv.applyMatrix4(minv);
-			//console.log (vv);
-			puck.position.copy (vv);
-
+			cubeSpin = !cubeSpin;
   		} else {
   			console.log ('no hit')
   		}
+/*
+  		// find intersections (only pick the HUD scene, using OrthographicCamera)  		
+  		raycaster.setFromCamera(mouse, cameraHUD);
+  					
+  		var intersects = raycaster.intersectObjects(pickables);
+  		if (intersects.length > 0) {
+			console.log ('picked')
+			cubeSpin = !cubeSpin;
+  		} else {
+  			console.log ('no hit')
+  		}
+*/
   		
 		
 	}
@@ -174,44 +175,34 @@
 		patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.hiro'
 		// patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.kanji'
 	})
-/*
-	// build a smoothedControls
-	var smoothedRoot = new THREE.Group()
-	scene.add(smoothedRoot)
-	var smoothedControls = new THREEx.ArSmoothedControls(smoothedRoot, {
-		lerpPosition: 0.4,
-		lerpQuaternion: 0.3,
-		lerpScale: 1,
-	})
-	onRenderFcts.push(function(delta){
-		smoothedControls.update(markerRoot)
-	})
-	//////////////////////////////////////////////////////////////////////////////////
-	//		add an object in the scene
-	//////////////////////////////////////////////////////////////////////////////////
-
-	var arWorldRoot = smoothedRoot
-*/
 
 	// add a cubeGeometry
 
-	var geometry	= new THREE.PlaneGeometry(1,1);
+	var geometry	= new THREE.CubeGeometry(1,1,1);
 	var material	= new THREE.MeshNormalMaterial({
 		transparent : true,
 		opacity: 0.5,
 		side: THREE.DoubleSide
 	}); 
 	var mesh	= new THREE.Mesh( geometry, material );
-	mesh.rotation.x = -Math.PI/2;
-	//mesh.position.y	= geometry.parameters.height/2
+	mesh.position.y	= geometry.parameters.height/2
 	
-	pickables.push (mesh);
+	//pickables.push (mesh);
 	
+//	arWorldRoot.add( mesh );
 	markerRoot.add (mesh);
+
+	/// add gridhelper
+	//var gridXZ = new THREE.GridHelper(2,10);
+	//markerRoot.add (gridXZ);
 	
-	var axes = new THREE.AxisHelper(2);
-	markerRoot.add (axes);
-	markerRoot.add (puck);
+	//scene.add (gridXZ);
+
+	onRenderFcts.push(function(){
+		if (cubeSpin)
+			mesh.rotation.x += 0.1
+	})
+
 	
 	//////////////////////////////////////////////////////////////////////////////////
 	//		render the whole thing on the page
@@ -220,9 +211,12 @@
 	document.body.appendChild( stats.dom );
 	// render the scene
 	onRenderFcts.push(function(){
+		renderer.clear();
+		
 		renderer.render( scene, camera );
-		//console.log (markerRoot.position);
-		//console.log (markerRoot.rotation)
+		square.material.visible = markerRoot.visible;
+		renderer.render (sceneHUD, cameraHUD);
+		
 		stats.update();
 	})
 
@@ -240,4 +234,5 @@
 			onRenderFct(deltaMsec/1000, nowMsec/1000)
 		})
 	})
-</script></body>
+</script>
+</body>
