@@ -35,7 +35,6 @@ var renderer, stats;
 var scene, camera, sceneHUD, cameraHUD;
 var mesh, button, markerRoot, cubeSpin = false; 
 var arToolkitSource, arToolkitContext;
-var mouse = new THREE.Vector2();
 /////////////
 var whRatio, halfW, halfH;
 var button1;
@@ -92,7 +91,6 @@ function init() {
 	sceneHUD.add (button);
 	
 	
-	window.addEventListener ('mousedown', onMouseDown, false);
 
 	////////////////////////////////////////////////////////////////////////////////
 	//          handle arToolkitSource
@@ -170,6 +168,11 @@ function init() {
 	stats = new Stats();
 	document.body.appendChild( stats.dom );
 	
+
+	window.addEventListener ('mousedown', onMouseDown, false);
+	// for those with touch screen
+    window.addEventListener('touchstart', onTouchStart, false);
+
 }
 
 function animate() {
@@ -222,6 +225,30 @@ function onMouseDown (event) {
 		console.log ('no hit')
 	}
 	
+}	
+
+function onTouchStart (event) {
+
+
+   if (event.touches.length == 1) {
+        
+		event.preventDefault();
+		let ndcX = ( event.touches[0].pageX / window.innerWidth ) * 2 - 1;
+		let ndcY = - ( event.touches[0].pageY / window.innerHeight ) * 2 + 1;
+	
+
+		// use 2D algorithm 	
+		let dist = button1.dInfTo ([halfW * ndcX, halfH * ndcY]);	
+		$('#ratio').text ('W/H ratio: ' + dist)
+	
+		if (dist < button1.size/2) {
+			console.log ('picked')
+			cubeSpin = !cubeSpin;
+		} else {
+			console.log ('no hit')
+		}
+
+	}	
 }	
 
 </script>
