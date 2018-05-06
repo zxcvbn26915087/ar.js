@@ -13,7 +13,7 @@
 	Contact me any time at <a href='https://twitter.com/jerome_etienne' target='_blank'>@jerome_etienne</a>
 </div><script>
 var renderer, scene, camera, stats;
-var raycaster, mouse, pickables;
+var raycaster, pickables;
 var arToolkitSource, arToolkitContext;
 var markerRoot, cubeSpin;
 var _iOSDevice;
@@ -54,7 +54,6 @@ function init() {
 	
 	/// for picking
 	raycaster = new THREE.Raycaster();
-	mouse = new THREE.Vector2();
 	pickables = [];
 	cubeSpin = false;
 	
