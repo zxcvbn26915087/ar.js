@@ -178,7 +178,8 @@ function doRaycast (ndcX, ndcY) {
 	// since the camera parameters have been set from
 	// artoolkit (the real webcam)
 	//
-	raycaster.ray.origin.setFromMatrixPosition( camera.matrixWorld );
+	//raycaster.ray.origin.setFromMatrixPosition( camera.matrixWorld );
+	raycaster.ray.origin.set (0,0,0)
 	raycaster.ray.direction.set( ndcX, ndcY, 0.5 ).unproject( camera ).sub( raycaster.ray.origin ).normalize();
 		
 	var intersects = raycaster.intersectObjects(pickables);

@@ -7,10 +7,11 @@
 <script src="../build/ar.js"></script>
 <script>THREEx.ArToolkitContext.baseURL = '../'</script>
 
-<body style='margin : 0px; overflow: hidden; font-family: Monospace;'><div style='position: absolute; top: 10px; width:100%; text-align: center; z-index: 1;'>
+<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
+<div style='font-size:2em;position: absolute; top: 10px; width:100%; text-align: center; z-index: 1;'>
 	<a href="https://github.com/jeromeetienne/AR.js/" target="_blank">AR.js</a> - three.js mobile performance
 	<br/>
-	Contact me any time at <a href='https://twitter.com/jerome_etienne' target='_blank'>@jerome_etienne</a>
+	Initialize both markers, but show them in controlled fashion
 </div>
 
 <script>
@@ -21,17 +22,19 @@ var stats;
 var markerKanji, markerHiro;
 var arToolKitSource, arToolKitContext;
 
-var raycaster, mouse, pickables;
+var raycaster, pickables;
 var showHiro = false;
+var _iOSDevice;
 
 init();
 animate();
 
 function init() {
+	// https://stackoverflow.com/questions/9038625/detect-if-device-is-ios?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+	let _iOSDevice = !!navigator.platform.match(/iPhone|iPod|iPad/);
 
-	//////////////////////////////////////////////////////////////////////////////////
-	//		Init
-	//////////////////////////////////////////////////////////////////////////////////
+	console.log ('iOS: ' + _iOSDevice)
+
 
 	// init renderer
 	renderer	= new THREE.WebGLRenderer({
@@ -45,9 +48,6 @@ function init() {
 	renderer.domElement.style.top = '0px'
 	renderer.domElement.style.left = '0px'
 	document.body.appendChild( renderer.domElement );
-
-	// array of functions for the rendering loop
-	var onRenderFcts= [];
 
 	// init scene and camera
 	scene	= new THREE.Scene();
@@ -120,22 +120,34 @@ function init() {
 
 	////////////////////////////////////////////////////////
 	// picker
-	window.addEventListener ('mousedown', onMouseDown, false);
+	if (_iOSDevice)
+		window.addEventListener('touchstart', onTouchStart, false) 
+	else
+		window.addEventListener ('mousedown', onMouseDown, false);
 	raycaster = new THREE.Raycaster();
-	mouse = new THREE.Vector2();
 	pickables = [markerKanji];	
 
 
 }
+
+function onTouchStart (event) {
+	console.log ('in touch start')
+
+   if (event.touches.length == 1) {
+        
+		event.preventDefault();
+		let ndcX = ( event.touches[0].pageX / window.innerWidth ) * 2 - 1;
+		let ndcY = - ( event.touches[0].pageY / window.innerHeight ) * 2 + 1;
 	
-function onMouseDown (event) {
-	event.preventDefault();
-  	mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  	mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  	
+		doToggleHiro (ndcX, ndcY);		
+		
+	}	
+}	
+	
+function doToggleHiro (ndcX, ndcY) {
   	//raycaster.ray.origin.setFromMatrixPosition( camera.matrixWorld );
 	raycaster.ray.origin.set (0,0,0)
-	raycaster.ray.direction.set( mouse.x, mouse.y, 0.5 ).unproject( camera ).sub( raycaster.ray.origin ).normalize();
+	raycaster.ray.direction.set( ndcX, ndcY, 0.5 ).unproject( camera ).sub( raycaster.ray.origin ).normalize();
 			
   	var intersects = raycaster.intersectObjects(pickables, true);
   	if (intersects.length > 0) {
@@ -149,6 +161,15 @@ function onMouseDown (event) {
 	} else {
 		scene.remove (markerHiro)
 	}
+
+}
+
+function onMouseDown (event) {
+	event.preventDefault();
+  	let ndcX = (event.clientX / window.innerWidth) * 2 - 1;
+  	let ndcY = -(event.clientY / window.innerHeight) * 2 + 1;
+
+	doToggleHiro (ndcX, ndcY)  	
 }
 
 	
@@ -208,17 +229,13 @@ function addMarkerHiro(){
 function animate() {
 	requestAnimationFrame (animate);
 	
-	// Line 111:
 	if( arToolkitSource.ready === false )	return
 	arToolkitContext.update( arToolkitSource.domElement )
 
-	// Line 154:
-	// markerHiro rotation
 	if (showHiro) {
 		markerHiro.children[0].rotation.x += 0.1;
 	}
 	
-	// Line 215:
 	renderer.render (scene, camera);
 	stats.update();
 	

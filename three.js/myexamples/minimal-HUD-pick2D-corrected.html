@@ -38,11 +38,18 @@ var arToolkitSource, arToolkitContext;
 /////////////
 var whRatio, halfW, halfH;
 var button1;
+var _iOSDevice;
 
 init();
 animate();
 
 function init() {
+
+	// https://stackoverflow.com/questions/9038625/detect-if-device-is-ios?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+	let _iOSDevice = !!navigator.platform.match(/iPhone|iPod|iPad/);
+
+	console.log ('iOS: ' + _iOSDevice)
+
 
 	renderer	= new THREE.WebGLRenderer({
 		// antialias	: true,
@@ -77,7 +84,6 @@ function init() {
 	halfW = halfH * whRatio;
 	
 	cameraHUD = new THREE.OrthographicCamera (-halfW,halfW, halfH,-halfH, -10,10);
-	//cameraHUD.position.set (0,0,0)
 
 
 	////////////////////////////////////////////////////
@@ -145,8 +151,8 @@ function init() {
 
 	// add a boxGeometry
 
-	var geometry	= new THREE.BoxGeometry(1,1,1);
-	var material	= new THREE.MeshNormalMaterial({
+	let geometry	= new THREE.BoxGeometry(1,1,1);
+	let material	= new THREE.MeshNormalMaterial({
 		transparent : true,
 		opacity: 0.5,
 		side: THREE.DoubleSide
@@ -154,7 +160,6 @@ function init() {
 	mesh	= new THREE.Mesh( geometry, material );
 	mesh.position.y	= geometry.parameters.height/2
 		
-//	arWorldRoot.add( mesh );
 	markerRoot.add (mesh);
 
 	//////////////////////////////////////////////////////////////////////////////////
@@ -168,9 +173,11 @@ function init() {
 	window.addEventListener('resize', function(){
 		onResize()
 	})
-	window.addEventListener ('mousedown', onMouseDown, false);
-	// for those with touch screen
-    window.addEventListener('touchstart', onTouchStart, false);
+	
+	if (_iOSDevice)
+    	window.addEventListener('touchstart', onTouchStart, false);
+	else
+		window.addEventListener ('mousedown', onMouseDown, false);
 
 }
 
