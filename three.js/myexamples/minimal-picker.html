@@ -15,7 +15,7 @@
 var renderer, scene, camera, stats;
 var raycaster, mouse, pickables;
 var arToolkitSource, arToolkitContext;
-var markerRoot;
+var markerRoot, cubeSpin;
 var _iOSDevice;
 
 init();
@@ -56,9 +56,9 @@ function init() {
 	raycaster = new THREE.Raycaster();
 	mouse = new THREE.Vector2();
 	pickables = [];
-	var cubeSpin = false;
+	cubeSpin = false;
 	
-	if (iOSDevice) {
+	if (_iOSDevice) {
 		window.addEventListener ('touchstart', onTouchStart, false);
 	} else
 		window.addEventListener ('mousedown', onMouseDown, false);
@@ -103,7 +103,7 @@ function init() {
 	
 
 	// create atToolkitContext
-	var arToolkitContext = new THREEx.ArToolkitContext({
+	arToolkitContext = new THREEx.ArToolkitContext({
 		cameraParametersUrl: THREEx.ArToolkitContext.baseURL + '../data/data/camera_para.dat',
 		detectionMode: 'mono',
 		maxDetectionRate: 30,
@@ -114,13 +114,6 @@ function init() {
 	arToolkitContext.init(function onCompleted(){
 		// copy projection matrix to camera
 		camera.projectionMatrix.copy( arToolkitContext.getProjectionMatrix() );
-	})
-
-	// update artoolkit on every frame
-	onRenderFcts.push(function(){
-		if( arToolkitSource.ready === false )	return
-
-		arToolkitContext.update( arToolkitSource.domElement )
 	})
 	
 	
@@ -208,12 +201,16 @@ function onMouseDown (event) {
 }
 
 function animate() {
+	requestAnimationFrame (animate)
+	if( arToolkitSource.ready === false )	return
+
+	arToolkitContext.update( arToolkitSource.domElement )
 
 	renderer.render (scene, camera);
 	stats.update();
 	
 	if (cubeSpin) {
-		markerRoot.childre[0].rotation.x += 0.1
+		markerRoot.children[0].rotation.x += 0.1
 	}
 	
 }
