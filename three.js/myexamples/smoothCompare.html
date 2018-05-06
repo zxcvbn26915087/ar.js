@@ -28,10 +28,6 @@ animate();
 
 function init() {
 
-	//////////////////////////////////////////////////////////////////////////////////
-	//		Init
-	//////////////////////////////////////////////////////////////////////////////////
-
 	// init renderer
 	renderer	= new THREE.WebGLRenderer({
 		// antialias	: true,
@@ -114,37 +110,6 @@ function init() {
 	stats = new Stats();
 	document.body.appendChild( stats.dom );
 
-	////////////////////////////////////////////////////////
-	// picker
-	window.addEventListener ('mousedown', onMouseDown, false);
-	raycaster = new THREE.Raycaster();
-	mouse = new THREE.Vector2();
-	pickables = [markerKanji];	
-
-
-}
-	
-function onMouseDown (event) {
-	event.preventDefault();
-  	mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  	mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  	
-  	//raycaster.ray.origin.setFromMatrixPosition( camera.matrixWorld );
-	raycaster.ray.origin.set (0,0,0)
-	raycaster.ray.direction.set( mouse.x, mouse.y, 0.5 ).unproject( camera ).sub( raycaster.ray.origin ).normalize();
-			
-  	var intersects = raycaster.intersectObjects(pickables, true);
-  	if (intersects.length > 0) {
-  		console.log ('toggle showHiro');
- 	
- 		showHiro = !showHiro;
-  			
-	}
-	if (showHiro) {
-		scene.add (markerHiro)
-	} else {
-		scene.remove (markerHiro)
-	}
 }
 	
 function addMarkerKanji () {
@@ -164,32 +129,8 @@ function addMarkerKanji () {
 		lerpScale: 1,
 	})
 	
-	//onRenderFcts.push(function(delta){
-	//	smoothedControls.update(markerRoot)
-	//})
 	//////////////////////////////////
 
-/*
-	var geometry	= new THREE.PlaneGeometry(1,1);
-		
-	let loader = new THREE.TextureLoader();
-	loader.setCrossOrigin('')
-	let texture = loader.load( 'https://i.imgur.com/J0RenHB.png' );
-	
-	let material = new THREE.MeshBasicMaterial( { 
-		map: texture,
-		transparent: true
-		 } );
-
-	let mesh	= new THREE.Mesh( geometry, material );
-	mesh.position.y	= geometry.parameters.height/2
-	mesh.position.z = 0.5;
-	
-	/// add gridhelper
-	var gridXZ = new THREE.GridHelper(2,10);
-	//markerRootKanji.add (gridXZ);
-
-*/
 	// add a torus knot & a transparent box	
 	var geometry	= new THREE.TorusKnotGeometry(0.3,0.1,64,16);
 	var material	= new THREE.MeshNormalMaterial();
@@ -230,19 +171,14 @@ function addMarkerHiro(){
 function animate() {
 	requestAnimationFrame (animate);
 	
-	// Line 111:
 	if( arToolkitSource.ready === false )	return
 	arToolkitContext.update( arToolkitSource.domElement )
 
-	// Line 154:
-	// markerHiro rotation
-	//if (showHiro) {
-		markerHiro.children[0].rotation.x += 0.1;
-		smoothedRoot.children[0].rotation.x -= 0.1;
-	//}
+	markerHiro.children[0].rotation.x += 0.1;
+	smoothedRoot.children[0].rotation.x -= 0.1;
+	
 	smoothedControls.update(markerKanji)
 	
-	// Line 215:
 	renderer.render (scene, camera);
 	stats.update();
 	
