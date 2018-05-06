@@ -180,8 +180,6 @@ function addMarkerKanji () {
 		 patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.kanji'
 	})
 
-	// add a torus knot	
-
 	var geometry	= new THREE.PlaneGeometry(1,1);
 		
 	let loader = new THREE.TextureLoader();
@@ -190,18 +188,19 @@ function addMarkerKanji () {
 	
 	let material = new THREE.MeshBasicMaterial( { 
 		map: texture,
-		transparent: true
-		 } );
+		transparent: true,
+		side: THREE.DoubleSide
+		} );
 
 	let mesh	= new THREE.Mesh( geometry, material );
 	mesh.position.y	= geometry.parameters.height/2
-	mesh.position.z = 0.5;
+	//mesh.position.z = 0.5;
 	
 	markerRootKanji.add (mesh);
 
 	/// add gridhelper
-	var gridXZ = new THREE.GridHelper(2,10);
-	markerRootKanji.add (gridXZ);
+	var gridXZ = new THREE.GridHelper(1,10);
+	//markerRootKanji.add (gridXZ);
 	
 	return markerRootKanji;
 }
@@ -239,6 +238,23 @@ function animate() {
 	renderer.render (scene, camera);
 	stats.update();
 	
+	// billboard of Hulk
+	// camera at eye coord: (0,0,0)
+	// corresponding marker coordinate:
+	let p0 = new THREE.Vector3 (0,0,0)
+	let mw = new THREE.Matrix4();		
+	p0.applyMatrix4 (mw.getInverse(markerKanji.matrixWorld));
+
+	p0.y = 0;
+	let front = new THREE.Vector3(0,0,1);
+	let angle = p0.angleTo (front);
+	let axis = new THREE.Vector3();
+	axis.crossVectors ( front, p0 ).normalize();
+	if (axis.y > 0)  // 0, 1, 0
+		markerKanji.children[0].rotation.y = angle;
+	else 
+		markerKanji.children[0].rotation.y = -angle;
+			
 }
 
 </script></body>
