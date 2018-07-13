@@ -18,6 +18,7 @@ var renderer, scene, camera, stats;
 var arToolkitSource, arToolkitContext;
 var smoothedControls, markerRoot, smoothedRoot;
 var sprite;
+var _iOSDevice;
 
 init();
 animate();
@@ -31,6 +32,10 @@ function onResize(){
 }
 
 function init() {
+	// https://stackoverflow.com/questions/9038625/detect-if-device-is-ios?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+	let _iOSDevice = !!navigator.platform.match(/iPhone|iPod|iPad/);
+
+	console.log ('iOS: ' + _iOSDevice)
 
 	renderer	= new THREE.WebGLRenderer({
 		// antialias	: true,

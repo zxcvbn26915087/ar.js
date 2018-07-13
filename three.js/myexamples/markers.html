@@ -198,6 +198,10 @@ function addMarkerKanji () {
 	
 	markerRootKanji.add (mesh);
 
+let cube = new THREE.Mesh (new THREE.BoxGeometry (1,1,1), new THREE.MeshNormalMaterial())
+markerRootKanji.add (cube)
+cube.position.z = -1;
+
 	/// add gridhelper
 	var gridXZ = new THREE.GridHelper(1,10);
 	//markerRootKanji.add (gridXZ);
