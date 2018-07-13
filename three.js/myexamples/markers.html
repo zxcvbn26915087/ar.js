@@ -185,6 +185,7 @@ function addMarkerKanji () {
 	let loader = new THREE.TextureLoader();
 	loader.setCrossOrigin('')
 	let texture = loader.load( 'https://i.imgur.com/J0RenHB.png' );
+	//let texture = loader.load( 'https://i.imgur.com/oRYPJ5X.png' );
 	
 	let material = new THREE.MeshBasicMaterial( { 
 		map: texture,
@@ -198,9 +199,10 @@ function addMarkerKanji () {
 	
 	markerRootKanji.add (mesh);
 
-let cube = new THREE.Mesh (new THREE.BoxGeometry (1,1,1), new THREE.MeshNormalMaterial())
+let cube = new THREE.Mesh (new THREE.BoxGeometry (3,2,1), new THREE.MeshNormalMaterial())
 markerRootKanji.add (cube)
-cube.position.z = -1;
+cube.position.z = -5;
+//cube.rotation.y = Math.PI/3
 
 	/// add gridhelper
 	var gridXZ = new THREE.GridHelper(1,10);
