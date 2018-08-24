@@ -124,6 +124,9 @@ function init() {
 	//////////////////////////////////////////////////////////////////////////////////
 
 	let arWorldRoot = smoothedRoot
+
+	let myWrap = new THREE.Group()
+	arWorldRoot.add (myWrap)
 	
 	// add a torus knot	
 	let geometry	= new THREE.CubeGeometry(1,1,1);
@@ -134,14 +137,21 @@ function init() {
 	}); 
 	let mesh	= new THREE.Mesh( geometry, material );
 	mesh.position.y	= geometry.parameters.height/2
-	arWorldRoot.add( mesh );
+	//arWorldRoot.add( mesh );
+	myWrap.add (mesh)
 	
 	geometry	= new THREE.TorusKnotGeometry(0.3,0.1,64,16);
 	material	= new THREE.MeshNormalMaterial(); 
 	mesh	= new THREE.Mesh( geometry, material );
 	mesh.position.y	= 0.5
-	arWorldRoot.add( mesh );
-
+	//arWorldRoot.add( mesh );
+	myWrap.add (mesh)
+	
+	//myWrap.scale.set (0.5,0.5,0.5)
+	myWrap.position.set (0.5, 0, -0.3)
+	// arWorldRoot.scale.set (0.5, 0.5, 0.5). // this WONT work ...
+	//arWorldRoot.position.set (0.5, 0, -0.3) // this WONT work ...
+	
 	stats = new Stats();
 	document.body.appendChild( stats.dom );
 }
@@ -157,7 +167,7 @@ function animate() {
 	arToolkitContext.update( arToolkitSource.domElement )
 
 	smoothedControls.update (markerRoot)
-	smoothedRoot.children[1].rotation.x += 0.1;
+	smoothedRoot.children[0].children[1].rotation.x += 0.1;
 	
 }
 	
