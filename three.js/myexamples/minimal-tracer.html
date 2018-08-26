@@ -197,7 +197,7 @@ function doPuckMove (ndcX, ndcY) {
 
 function onMouseDown (event) {
 
-	console.log ('mouse down')
+	console.log ('width: ' + window.innerWidth + ' height: ' + window.innerHeight)
 	event.preventDefault();
 	let ndcX = (event.clientX / window.innerWidth) * 2 - 1;
 	let ndcY = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -226,8 +226,8 @@ function onMouseDown (event) {
 	var intersects = raycaster.intersectObjects(pickables);
 	if (intersects.length > 0) {
 	
-		console.log ('picked')
-		console.log ('marker space: '  + intersects[0].uv.x + ',' + intersects[0].uv.y);
+		//console.log ('picked')
+		//console.log ('marker space: '  + intersects[0].uv.x + ',' + intersects[0].uv.y);
 		var minv = new THREE.Matrix4();
 		minv.getInverse (markerRoot.matrixWorld);
 		var vv = intersects[0].point.clone();
