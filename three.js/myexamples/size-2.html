@@ -198,7 +198,9 @@ function animate() {
 	renderer.render (scene, camera);
 	stats.update();
 
-	$('printDis').text ('DIS' + markerHiro.position.distanceTo (markerKanji.position).toFixed(2))
+	let did =  markerHiro.position.distanceTo (markerKanji.position)
+	console.log (did)
+	$('#printDis').text ('DIS: ' + did.toFixed(2))
 /*	
 	
 	// billboard of Hulk
