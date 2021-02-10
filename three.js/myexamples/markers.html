@@ -152,10 +152,9 @@ function doToggleHiro (ndcX, ndcY) {
   	var intersects = raycaster.intersectObjects(pickables, true);
   	if (intersects.length > 0) {
   		console.log ('toggle showHiro');
- 	
- 		showHiro = !showHiro;
-  			
+ 	 	showHiro = !showHiro; 			
 	}
+	
 	if (showHiro) {
 		scene.add (markerHiro)
 	} else {

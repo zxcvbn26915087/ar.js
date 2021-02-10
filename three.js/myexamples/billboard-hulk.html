@@ -8,10 +8,10 @@
 <script>THREEx.ArToolkitContext.baseURL = '../'</script>
 
 <body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
-<div style='position: absolute; top: 10px; width:100%; text-align: center; z-index: 1;'>
-<a href="https://github.com/jeromeetienne/AR.js/" target="_blank">AR.js</a>
-	 - three.js mobile performance<br>
-Minimal Version
+<div style='font-size:2em;position: absolute; top: 10px; width:100%; text-align: center; z-index: 1;'>
+	<a href="https://github.com/jeromeetienne/AR.js/" target="_blank">AR.js</a> - three.js
+	<br/>
+	Billboarded Hulk (Hiro)
 </div>
 
 <script>
@@ -19,13 +19,20 @@ Minimal Version
 // global variables
 var renderer, scene, camera;
 var stats;
-var arToolKitSource, arToolKitContext;
 var markerHiro;
+var arToolKitSource, arToolKitContext;
+
+var _iOSDevice;
 
 init();
 animate();
 
 function init() {
+	// https://stackoverflow.com/questions/9038625/detect-if-device-is-ios?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+	let _iOSDevice = !!navigator.platform.match(/iPhone|iPod|iPad/);
+
+	console.log ('iOS: ' + _iOSDevice)
+
 
 	// init renderer
 	renderer	= new THREE.WebGLRenderer({
@@ -40,13 +47,14 @@ function init() {
 	renderer.domElement.style.left = '0px'
 	document.body.appendChild( renderer.domElement );
 
-	stats = new Stats();
-	document.body.appendChild( stats.dom );
-
 	// init scene and camera
 	scene	= new THREE.Scene();
 	
-	// Create a BASIC camera
+	//////////////////////////////////////////////////////////////////////////////////
+	//		Initialize a basic camera
+	//////////////////////////////////////////////////////////////////////////////////
+
+	// Create a camera
 	camera = new THREE.Camera();
 	scene.add(camera);
 
@@ -57,6 +65,14 @@ function init() {
 	arToolkitSource = new THREEx.ArToolkitSource({
 		// to read from the webcam 
 		sourceType : 'webcam',
+
+		// to read from an image
+		// sourceType : 'image',
+		// sourceUrl : THREEx.ArToolkitContext.baseURL + '../data/images/img.jpg',		
+
+		// to read from a video
+		// sourceType : 'video',
+		// sourceUrl : THREEx.ArToolkitContext.baseURL + '../data/videos/headtracking.mp4',		
 	})
 
 	arToolkitSource.init(function onReady(){
@@ -93,54 +109,72 @@ function init() {
 
 	markerHiro = addMarkerHiro();
 	scene.add (markerHiro); 
-	
-	var light = new THREE.PointLight( 0xffffff, 1, 100 );
-	light.position.set( 5, 5, 5 );
-	scene.add( light );
-	
+		
+	stats = new Stats();
+	document.body.appendChild( stats.dom );
+
 }
 	
-function addMarkerHiro(){
-	let markerRoot = new THREE.Group()
-
-	var artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
+function addMarkerHiro () {
+	let markerRootHiro = new THREE.Group();
+	var artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRootHiro, {
 		type : 'pattern',
-		patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.hiro'
+		 patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.hiro'
 	})
+		
+	let loader = new THREE.TextureLoader();
+	loader.setCrossOrigin('')
+	let texture = loader.load( 'https://i.imgur.com/J0RenHB.png' );
+	
+	let material = new THREE.MeshBasicMaterial( { 
+		map: texture,
+		transparent: true,
+		side: THREE.DoubleSide
+		} );
+	let geometry	= new THREE.PlaneGeometry(1,1);
+	let mesh	= new THREE.Mesh( geometry, material );
+	mesh.position.y	= geometry.parameters.height/2
+	let hulkGroup = new THREE.Object3D();
+	hulkGroup.add (mesh);
 
-	// add a torus knot & a transparent box	
-	let geometry	= new THREE.TorusKnotGeometry(0.3,0.1,64,16);
-	let material	= new THREE.MeshLambertMaterial({color:'cyan'});
-	let mesh_t	= new THREE.Mesh( geometry, material );
-	let mesh_b = new THREE.Mesh (new THREE.BoxGeometry(1,1,1), 
-				new THREE.MeshNormalMaterial({transparent:true, opacity:0.3}));
+	markerRootHiro.add (hulkGroup);
+	
+	/// add gridhelper
+	var gridXZ = new THREE.GridHelper(1,10);
+	markerRootHiro.add (gridXZ);
+	
+	return markerRootHiro;
+}
 
-	// need to add a WRAP ...
-	let myWrap = new THREE.Group()
-	markerRoot.add (myWrap)
-	myWrap.add (mesh_t, mesh_b);
-	
-	
-	myWrap.scale.set (0.5,0.5,0.5);
-	myWrap.position.set (-0.5, 0.5, 0.5);
-	
-	//markerRoot.scale.set (0.5, 0.5, 0.5) // this WONT work ...
-	//markerRoot.position.set (0.5, 0, -0.3) // this WONT work ...
-	
-	return markerRoot;
-}	
 
 
 function animate() {
 	requestAnimationFrame (animate);
-	stats.update();
 	
 	if( arToolkitSource.ready === false )	return
 	arToolkitContext.update( arToolkitSource.domElement )
 
-	//markerHiro.children[0].rotation.y += 0.1;
+	renderer.render (scene, camera);
+	stats.update();
 	
-	renderer.render (scene, camera);	
+	// billboard of Hulk
+	// camera at eye coord: (0,0,0)
+	// corresponding marker coordinate:
+	let p0 = new THREE.Vector3 (0,0,0); // the 'marker coord' of camera
+	let mw = new THREE.Matrix4();		
+	p0.applyMatrix4 (mw.getInverse(markerHiro.matrixWorld));
+
+	p0.y = 0;
+	let front = new THREE.Vector3(0,0,1);
+	let angle = p0.angleTo (front);
+	let axis = new THREE.Vector3();
+	axis.crossVectors ( front, p0 ).normalize();
+	let hulkGroup = markerHiro.children[0];
+	if (axis.y > 0)  // 0, 1, 0
+		hulkGroup.rotation.y = angle;
+	else 
+		hulkGroup.rotation.y = -angle;
+
 }
 
 </script></body>
