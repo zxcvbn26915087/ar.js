@@ -12,7 +12,7 @@
 <div style='position: absolute; top: 10px; width:100%; text-align: center; z-index: 1;'>
 <a href="https://github.com/jeromeetienne/AR.js/" target="_blank">AR.js</a>
 	 - three.js<br>
-Minimal Version
+hw1
 </div>
 
 <script>
@@ -23,7 +23,8 @@ var stats;
 var arToolKitSource, arToolKitContext;
 var markerHiro;
 
-var theta = 0;
+var theta =0;
+
 
 init();
 animate();
@@ -106,8 +107,7 @@ function addMarkerHiro(){
 		type : 'pattern',
 		patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.hiro'
 	})
-
-/*
+	/*
 	// add a torus knot & a transparent box	
 	var geometry	= new THREE.TorusKnotGeometry(0.3,0.1,64,16);
 	var material	= new THREE.MeshNormalMaterial();
@@ -119,15 +119,21 @@ function addMarkerHiro(){
 				new THREE.MeshNormalMaterial({transparent:true, opacity:0.3}));
 	mesh.position.y	= 0.5
 	markerRoot.add (mesh);
-*/
-
-	var ball = new THREE.Mesh (new THREE.SphereGeometry (0.1, 20,20), new THREE.MeshNormalMaterial());
-	markerRoot.add (ball);
+	*/
+	var ball =new THREE.Mesh(new THREE.SphereGeometry(0.1,20,20),new THREE.MeshNormalMaterial());
+	markerRoot.add(ball);
 	ball.position.y = 0.1;
 	
-	var grid = new THREE.GridHelper (1, 10, 'red', 'white');
-	markerRoot.add (grid);
-			
+	var grid =new THREE.GridHelper(1,10,'red','white');
+	markerRoot.add(grid);
+	
+	var cylinder =new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.25,0.5,128),new THREE.MeshNormalMaterial());
+	
+	cylinder.position.y = 0.25;
+	
+	
+	markerRoot.add(cylinder);
+	
 	return markerRoot;
 }	
 
@@ -137,11 +143,17 @@ function animate() {
 	
 	if( arToolkitSource.ready === false )	return
 	arToolkitContext.update( arToolkitSource.domElement )
-
-	theta += 0.01;
-	markerHiro.children[0].position.set (0.5*Math.sin(theta), 0.1, 0.5*Math.cos(theta));
 	
-	renderer.render (scene, camera);	
+	theta += 0.01;
+	markerHiro.children[0].position.set(0.5 * Math.sin(theta),0.1,0.5 * Math.cos(theta));
+	
+	markerHiro.children[2].position.set(0,0.25+Math.abs(0.5*Math.sin(theta)),0);
+	
+	
+	//markerHiro.children[0].rotation.x += 0.1;
+	
+	renderer.render (scene, camera);
+	
 }
 
 </script></body>
