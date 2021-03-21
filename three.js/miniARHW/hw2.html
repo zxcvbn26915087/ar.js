@@ -18,7 +18,7 @@
 	<button id='toggle' >
 		toggle
 	</button>
-	<h3><p id="text" style ="color:red">
+	<h3><p id='text' style ="color:red">
 		color
 	</p></h3>
 </div>
@@ -151,7 +151,6 @@ function addMarkerHiro(){
 	group.add( circle2 );
 	
 	var cylinder = new THREE.Mesh( new THREE.CylinderGeometry( 0, 0.05, 1, 32 ), new THREE.MeshBasicMaterial( {color: 0xffffff} ) );
-	markerRoot.add (cylinder);
 	cylinder.position.y = 0.5;
 	markerRoot.add( cylinder );
 	
@@ -175,12 +174,12 @@ function animate() {
   
 	
 	
-	if((group.rotation.z % (Math.PI*2)) >= Math.PI/2 & (group.rotation.z % (Math.PI*2)) < 5/6*Math.PI){
+	if((group.rotation.z % (Math.PI*2)) >= Math.PI/2 & (group.rotation.z % (Math.PI*2)) < 7/6*Math.PI){
 		document.getElementById('text').innerHTML = 'blue';
 		document.getElementById('text').style.color = 'blue';
 	}
 	
-	else if((group.rotation.z % (Math.PI*2)) >= 5/6*Math.PI & (group.rotation.z % (Math.PI*2)) < 11/6*Math.PI){
+	else if((group.rotation.z % (Math.PI*2)) >= 7/6*Math.PI & (group.rotation.z % (Math.PI*2)) < 11/6*Math.PI){
 		document.getElementById('text').innerHTML = 'green';
 		document.getElementById('text').style.color = 'green';
 	}
@@ -192,6 +191,7 @@ function animate() {
 	
 	angle += omega*dt;
 	group.rotation.z = angle;
+	
 	renderer.render (scene, camera);
 	
 }
