@@ -18,7 +18,7 @@
 	<button id='toggle' >
 		toggle
 	</button>
-	<h3><p id='text' style ="color:red">
+	<h3><p id='text' style ="color:red;background:white;">
 		color
 	</p></h3>
 </div>
@@ -129,8 +129,6 @@ function addMarkerHiro(){
 		patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.hiro'
 	})
 	
-	var gridXZ = new THREE.GridHelper(1, 10, 'red', 'white');
-	markerRoot.add(gridXZ);
 	
 	group = new THREE.Group();
 	markerRoot.add (group);
