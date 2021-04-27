@@ -1,32 +1,39 @@
 <!DOCTYPE html>
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-
 <!-- three.js library -->
 <script src='../examples/vendor/three.js/build/three.min.js'></script>
-<script src="../examples/vendor/three.js/examples/js/libs/stats.min.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
 <!-- ar.js -->
 <script src="../build/ar.js"></script>
 <script>THREEx.ArToolkitContext.baseURL = '../'</script>
 
 <body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
-<div style='position: absolute; top: 10px; width:100%; text-align: center; z-index: 1;'>
-<a href="https://github.com/jeromeetienne/AR.js/" target="_blank">AR.js</a>
-	 - three.js<br>
-Minimal Version
+<div style='font-size:2em; color:cyan; position: absolute; top: 10px; width:100%; text-align: center; z-index: 1;'>
+	<a href="https://github.com/jeromeetienne/AR.js/" target="_blank">AR.js</a>
+	<br>
+	Independent Markers
+	<p style='color:yellow' id='printDis'></p>
 </div>
 
 <script>
 
 // global variables
 var renderer, scene, camera;
-var stats;
+var markerKanji, markerHiro;
 var arToolKitSource, arToolKitContext;
-var markerHiro;
+
+var _iOSDevice;
 
 init();
 animate();
 
 function init() {
+	// https://stackoverflow.com/questions/9038625/detect-if-device-is-ios?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+	let _iOSDevice = !!navigator.platform.match(/iPhone|iPod|iPad/);
+
+	console.log ('iOS: ' + _iOSDevice)
+
 
 	// init renderer
 	renderer	= new THREE.WebGLRenderer({
@@ -41,13 +48,14 @@ function init() {
 	renderer.domElement.style.left = '0px'
 	document.body.appendChild( renderer.domElement );
 
-	stats = new Stats();
-	document.body.appendChild( stats.dom );
-
 	// init scene and camera
 	scene	= new THREE.Scene();
 	
-	// Create a BASIC camera
+	//////////////////////////////////////////////////////////////////////////////////
+	//		Initialize a basic camera
+	//////////////////////////////////////////////////////////////////////////////////
+
+	// Create a camera
 	camera = new THREE.Camera();
 	scene.add(camera);
 
@@ -58,6 +66,14 @@ function init() {
 	arToolkitSource = new THREEx.ArToolkitSource({
 		// to read from the webcam 
 		sourceType : 'webcam',
+
+		// to read from an image
+		// sourceType : 'image',
+		// sourceUrl : THREEx.ArToolkitContext.baseURL + '../data/images/img.jpg',		
+
+		// to read from a video
+		// sourceType : 'video',
+		// sourceUrl : THREEx.ArToolkitContext.baseURL + '../data/videos/headtracking.mp4',		
 	})
 
 	arToolkitSource.init(function onReady(){
@@ -69,12 +85,10 @@ function init() {
 		onResize()
 	})
 	function onResize(){
-		arToolkitSource.onResizeElement()	
-		arToolkitSource.copyElementSizeTo(renderer.domElement);
-		console.log ('[onResize] width: ' + renderer.domElement.width)	
-		console.log ('[onResize] height: ' + renderer.domElement.height)	
+		arToolkitSource.onResize()	
+		arToolkitSource.copySizeTo(renderer.domElement)	
 		if( arToolkitContext.arController !== null ){
-			arToolkitSource.copyElementSizeTo(arToolkitContext.arController.canvas)	
+			arToolkitSource.copySizeTo(arToolkitContext.arController.canvas)	
 		}	
 	}
 	////////////////////////////////////////////////////////////////////////////////
@@ -96,42 +110,58 @@ function init() {
 
 	markerHiro = addMarkerHiro();
 	scene.add (markerHiro); 
+	markerKanji = addMarkerKanji();
+	scene.add (markerKanji);
 	
 }
-	
-function addMarkerHiro(){
-	let markerRoot = new THREE.Group()
 
-	var artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
+	
+
+	
+function addMarkerKanji () {
+	let markerRootKanji = new THREE.Group();
+	var artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRootKanji, {
+		type : 'pattern',
+		 patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.kanji'
+	})
+	// add a sphere for Hiro
+	var geometry	= new THREE.SphereGeometry(0.1,20,20);
+	var material	= new THREE.MeshNormalMaterial();
+	box2	= new THREE.Mesh( geometry, material );
+	box2.position.y	= 0.1;
+	
+	markerRootKanji.add (box2);
+
+	return markerRootKanji;
+}
+
+function addMarkerHiro(){
+	let markerRootHiro = new THREE.Group()
+
+	var artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRootHiro, {
 		type : 'pattern',
 		patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.hiro'
 	})
 
-	// add a torus knot & a transparent box	
-	var geometry	= new THREE.TorusKnotGeometry(0.3,0.1,64,16);
+	// add a box for Hiro
+	var geometry	= new THREE.BoxGeometry(0.2,0.2,0.2);
 	var material	= new THREE.MeshNormalMaterial();
-	var mesh	= new THREE.Mesh( geometry, material );
-	mesh.position.y	= 0.5
-	markerRoot.add (mesh);
+	box1	= new THREE.Mesh( geometry, material );
+	box1.position.y	= 0.1;
 	
-	mesh = new THREE.Mesh (new THREE.BoxGeometry(1,1,1), 
-				new THREE.MeshNormalMaterial({transparent:true, opacity:0.3}));
-	mesh.position.y	= 0.5
-	markerRoot.add (mesh);
+	markerRootHiro.add (box1);
 		
-	return markerRoot;
+	return markerRootHiro;
 }	
+
 
 function animate() {
 	requestAnimationFrame (animate);
-	stats.update();
+	renderer.render (scene, camera);
 	
 	if( arToolkitSource.ready === false )	return
 	arToolkitContext.update( arToolkitSource.domElement )
 
-	markerHiro.children[0].rotation.x += 0.1;
-	
-	renderer.render (scene, camera);	
 }
 
 </script></body>

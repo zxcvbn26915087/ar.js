@@ -2,25 +2,25 @@
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <!-- three.js library -->
 <script src='../examples/vendor/three.js/build/three.min.js'></script>
-<script src="../examples/vendor/three.js/examples/js/libs/stats.min.js"></script>
 <!-- ar.js -->
 <script src="../build/ar.js"></script>
 <script>THREEx.ArToolkitContext.baseURL = '../'</script>
 
 <body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
 <div style='font-size:2em;position: absolute; top: 10px; width:100%; text-align: center; z-index: 1;'>
-	<a href="https://github.com/jeromeetienne/AR.js/" target="_blank">AR.js</a> - three.js
+	<a href="https://github.com/jeromeetienne/AR.js/" target="_blank">AR.js</a>
 	<br/>
-	Billboarded Hulk (Hiro)
+	Billboarded Aim (Hiro)
 </div>
 
 <script>
 
 // global variables
 var renderer, scene, camera;
-var stats;
-var markerHiro;
 var arToolKitSource, arToolKitContext;
+
+var markerHiro;
+var aimGroup;
 
 var _iOSDevice;
 
@@ -47,6 +47,7 @@ function init() {
 	renderer.domElement.style.left = '0px'
 	document.body.appendChild( renderer.domElement );
 
+	
 	// init scene and camera
 	scene	= new THREE.Scene();
 	
@@ -110,9 +111,6 @@ function init() {
 	markerHiro = addMarkerHiro();
 	scene.add (markerHiro); 
 		
-	stats = new Stats();
-	document.body.appendChild( stats.dom );
-
 }
 	
 function addMarkerHiro () {
@@ -124,28 +122,27 @@ function addMarkerHiro () {
 		
 	let loader = new THREE.TextureLoader();
 	loader.setCrossOrigin('')
-	let texture = loader.load( 'https://i.imgur.com/J0RenHB.png' );
+	let texture = loader.load( 'https://i.imgur.com/sFfSAYH.png?1' );
 	
 	let material = new THREE.MeshBasicMaterial( { 
 		map: texture,
-		transparent: true,
+		//color: 0xffff00,
 		side: THREE.DoubleSide
 		} );
 	let geometry	= new THREE.PlaneGeometry(1,1);
 	let mesh	= new THREE.Mesh( geometry, material );
-	mesh.position.y	= geometry.parameters.height/2
-	let hulkGroup = new THREE.Object3D();
-	hulkGroup.add (mesh);
-
-	markerRootHiro.add (hulkGroup);
+	//mesh.position.y	= geometry.parameters.height/2 // mesh centered at root
+	aimGroup = new THREE.Object3D();
+	aimGroup.add (mesh);
+	let origin = new THREE.Mesh (new THREE.OctahedronGeometry(0.1), new THREE.MeshNormalMaterial());
+	markerRootHiro.add (aimGroup, origin);
 	
 	/// add gridhelper
 	var gridXZ = new THREE.GridHelper(1,10);
-	markerRootHiro.add (gridXZ);
+	//markerRootHiro.add (gridXZ);
 	
 	return markerRootHiro;
 }
-
 
 
 function animate() {
@@ -155,40 +152,22 @@ function animate() {
 	arToolkitContext.update( arToolkitSource.domElement )
 
 	renderer.render (scene, camera);
-	stats.update();
-	
-	// billboard of Hulk
-	// camera at eye coord: (0,0,0)
-	// corresponding marker coordinate:
 
+	/////////////////////////////////////////////////////////////////////////
 	let localCamera = markerHiro.worldToLocal (new THREE.Vector3(0,0,0))
-	// CYLINDRICAL billboard:
-	localCamera.y = 0;
 	
 	// to rotate (0,0,1) to localCamera [markerCoord]
 	let point = new THREE.Vector3(0,0,1);
 	let angle = point.angleTo (localCamera);
 	let axis = new THREE.Vector3();
 	axis.crossVectors(point, localCamera).normalize(); // normalization is IMPORTANT!
-	let hulkGroup = markerHiro.children[0];
-	hulkGroup.quaternion.setFromAxisAngle (axis, angle);
-/*
-	let p0 = new THREE.Vector3 (0,0,0); // the 'marker coord' of camera
-	let mw = new THREE.Matrix4();		
-	p0.applyMatrix4 (mw.getInverse(markerHiro.matrixWorld));
+	aimGroup.quaternion.setFromAxisAngle (axis, angle);
 
-	p0.y = 0;
-	let front = new THREE.Vector3(0,0,1);
-	let angle = p0.angleTo (front);
-	let axis = new THREE.Vector3();
-	axis.crossVectors ( front, p0 ).normalize();
-	let hulkGroup = markerHiro.children[0];
-	if (axis.y > 0)  // 0, 1, 0
-		hulkGroup.rotation.y = angle;
-	else 
-		hulkGroup.rotation.y = -angle;
-
-*/
+	// here, 'rotate' is a verb: keep rotating ...
+	//aimGroup.rotateOnAxis (axis.normalize(), angle);  // does NOT work
+	
+	//	aimGroup.lookAt (new THREE.Vector3(0,0,0));  // does NOT work
+	
 }
 
 </script></body>

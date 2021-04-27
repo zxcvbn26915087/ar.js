@@ -2,24 +2,25 @@
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <!-- three.js library -->
 <script src='../examples/vendor/three.js/build/three.min.js'></script>
-<script src="../examples/vendor/three.js/examples/js/libs/stats.min.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
 <!-- ar.js -->
 <script src="../build/ar.js"></script>
 <script>THREEx.ArToolkitContext.baseURL = '../'</script>
 
 <body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
-<div style='font-size:2em;position: absolute; top: 10px; width:100%; text-align: center; z-index: 1;'>
-	<a href="https://github.com/jeromeetienne/AR.js/" target="_blank">AR.js</a> - three.js
-	<br/>
-	Billboarded Hulk (Hiro)
+<div style='font-size:2em; color:cyan; position: absolute; top: 10px; width:100%; text-align: center; z-index: 1;'>
+	<a href="https://github.com/jeromeetienne/AR.js/" target="_blank">AR.js</a>
+	<br>
+	Inter-Marker Line
+	<p style='color:yellow' id='printDis'></p>
 </div>
 
 <script>
 
 // global variables
 var renderer, scene, camera;
-var stats;
-var markerHiro;
+var markerKanji, markerHiro;
 var arToolKitSource, arToolKitContext;
 
 var _iOSDevice;
@@ -109,86 +110,85 @@ function init() {
 
 	markerHiro = addMarkerHiro();
 	scene.add (markerHiro); 
-		
-	stats = new Stats();
-	document.body.appendChild( stats.dom );
-
-}
+	markerKanji = addMarkerKanji();
+	scene.add (markerKanji);
 	
-function addMarkerHiro () {
-	let markerRootHiro = new THREE.Group();
+}
+
+	
+function addMarkerKanji () {
+	let markerRootKanji = new THREE.Group();
+	var artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRootKanji, {
+		type : 'pattern',
+		 patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.kanji'
+	})
+	// add a sphere for Hiro
+	var geometry	= new THREE.SphereGeometry(0.1,20,20);
+	var material	= new THREE.MeshNormalMaterial();
+	box2	= new THREE.Mesh( geometry, material );
+	box2.position.y	= 0.1;
+	
+	markerRootKanji.add (box2);
+
+	return markerRootKanji;
+}
+
+function addMarkerHiro(){
+	let markerRootHiro = new THREE.Group()
+
 	var artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRootHiro, {
 		type : 'pattern',
-		 patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.hiro'
+		patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.hiro'
 	})
+
+	// add a box for Hiro
+	var geometry	= new THREE.BoxGeometry(0.2,0.2,0.2);
+	var material	= new THREE.MeshNormalMaterial();
+	box1	= new THREE.Mesh( geometry, material );
+	box1.position.y	= 0.1;
+	
+	markerRootHiro.add (box1);
 		
-	let loader = new THREE.TextureLoader();
-	loader.setCrossOrigin('')
-	let texture = loader.load( 'https://i.imgur.com/J0RenHB.png' );
-	
-	let material = new THREE.MeshBasicMaterial( { 
-		map: texture,
-		transparent: true,
-		side: THREE.DoubleSide
-		} );
-	let geometry	= new THREE.PlaneGeometry(1,1);
-	let mesh	= new THREE.Mesh( geometry, material );
-	mesh.position.y	= geometry.parameters.height/2
-	let hulkGroup = new THREE.Object3D();
-	hulkGroup.add (mesh);
-
-	markerRootHiro.add (hulkGroup);
-	
-	/// add gridhelper
-	var gridXZ = new THREE.GridHelper(1,10);
-	markerRootHiro.add (gridXZ);
-	
 	return markerRootHiro;
-}
-
-
+}	
 
 function animate() {
 	requestAnimationFrame (animate);
+	renderer.render (scene, camera);
 	
 	if( arToolkitSource.ready === false )	return
 	arToolkitContext.update( arToolkitSource.domElement )
 
-	renderer.render (scene, camera);
-	stats.update();
+	// remove old one and 
+	// draw a new line from Hiro to Kanji
+	markerHiro.remove (markerHiro.getObjectByName('interMarkerLine'));
 	
-	// billboard of Hulk
-	// camera at eye coord: (0,0,0)
-	// corresponding marker coordinate:
-
-	let localCamera = markerHiro.worldToLocal (new THREE.Vector3(0,0,0))
-	// CYLINDRICAL billboard:
-	localCamera.y = 0;
+	let toKanji = markerHiro.worldToLocal (markerKanji.localToWorld (new THREE.Vector3(0,0,0)));
 	
-	// to rotate (0,0,1) to localCamera [markerCoord]
-	let point = new THREE.Vector3(0,0,1);
-	let angle = point.angleTo (localCamera);
-	let axis = new THREE.Vector3();
-	axis.crossVectors(point, localCamera).normalize(); // normalization is IMPORTANT!
-	let hulkGroup = markerHiro.children[0];
-	hulkGroup.quaternion.setFromAxisAngle (axis, angle);
-/*
-	let p0 = new THREE.Vector3 (0,0,0); // the 'marker coord' of camera
-	let mw = new THREE.Matrix4();		
-	p0.applyMatrix4 (mw.getInverse(markerHiro.matrixWorld));
+	// old way .....	
+	var material = new THREE.LineDashedMaterial( {
+		color:0x00ffff,
+		dashSize: .1,
+		gapSize: .1
+	} );
+	var geometry = new THREE.Geometry();
+	geometry.vertices.push(new THREE.Vector3(0,0,0));
+	geometry.vertices.push(new THREE.Vector3(toKanji.x, 0, toKanji.z));
+	geometry.computeLineDistances() // must call this when the dash-line is initialized!!! 
+	let line = new THREE.Line(geometry, material);
+	
+	/* new way ...
+	vertices = [0,0,0, toKanji.x, 0, toKanji.z];
+	let geometry = new THREE.BufferGeometry();
 
-	p0.y = 0;
-	let front = new THREE.Vector3(0,0,1);
-	let angle = p0.angleTo (front);
-	let axis = new THREE.Vector3();
-	axis.crossVectors ( front, p0 ).normalize();
-	let hulkGroup = markerHiro.children[0];
-	if (axis.y > 0)  // 0, 1, 0
-		hulkGroup.rotation.y = angle;
-	else 
-		hulkGroup.rotation.y = -angle;
-
-*/
+	geometry.addAttribute ('position', new THREE.Float32BufferAttribute(vertices,3));
+	const material = new THREE.LineDashedMaterial({color: 0x00ffff});
+	
+	var line = new THREE.Line (geometry, material);
+	*/
+	
+	line.name = 'interMarkerLine';
+	markerHiro.add (line);
 }
 
 </script></body>

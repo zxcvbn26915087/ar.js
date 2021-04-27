@@ -4,8 +4,6 @@
 <script src='../examples/vendor/three.js/build/three.min.js'></script>
 <script src="../examples/vendor/three.js/examples/js/libs/stats.min.js"></script>
 <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-<script src="https://threejs.org/build/three.min.js"></script>
-<script src="https://jyunming-chen.github.io/tutsplus/js/KeyboardState.js"></script>
 <!-- ar.js -->
 <script src="../build/ar.js"></script>
 <script>THREEx.ArToolkitContext.baseURL = '../'</script>
@@ -21,36 +19,41 @@
 <script>
 
 class Button {
-	constructor (size, x, y){
-		this.size = size;
-		this.centerX = x;
-		this.centerY = y;
+	constructor (cx, cy, size, colorString = 'yellow', map = null){
+		this.centerX = cx;  // HUD-coord
+		this.centerY = cy;
+		this.size = size;  // circle radius
+		let material = new THREE.MeshBasicMaterial({color: colorString, transparent: true, opacity:0.7});
+		if (map) 
+		   material.map = map;
+		this.mesh = new THREE.Mesh (new THREE.CircleGeometry (size, 36), material );
+	    this.mesh.position.set (cx, cy, 0);
 	}
-	d1To (v) { // 1-norm
-		return Math.abs (v[0]-this.centerX) + Math.abs(v[1]-this.centerY);
+	
+	setLocation (lx, ly) { // 2D-HUD 
+	    this.mesh.position.set (lx, ly, 0);
 	}
+	
 	d2To (v) { // 2-norm
 		return Math.sqrt ( (v[0]-this.centerX)*(v[0]-this.centerX) 
 				+ (v[1]-this.centerY)*(v[1]-this.centerY) );
-	}
-	dInfTo (v) { // inf-norm
-		return Math.max( Math.abs (v[0]-this.centerX), Math.abs(v[1]-this.centerY) )
 	}
 }
 
 var renderer, stats;
 var scene, camera, sceneHUD, cameraHUD;
-var cylinder, button, markerRoot, cubeSpin = false; 
+var mesh, button, markerRoot, cubeSpin = false; 
 var arToolkitSource, arToolkitContext;
 /////////////
 var whRatio, halfW, halfH;
 var button1;
 var _iOSDevice;
-var angle =0;
-var dt = 0.2;
-var maxOmega = 10;
-var omega = 0;
-
+var angle = 0;
+var group;
+var omega = 0;  
+var isAction = false,state=1;
+var rotate;
+var pointer;
 init();
 animate();
 
@@ -100,31 +103,27 @@ function init() {
 	////////////////////////////////////////////////////
 	// create a button to toggle rotation
 	//
-	var loader = new THREE.TextureLoader();
-	loader.setCrossOrigin('');
-	// load a resource
+	let loader = new THREE.TextureLoader();
+	loader.setCrossOrigin(''); // 重要！
 	loader.load(
-		// resource URL
-		'https://i.imgur.com/GKk4xDt.png',
-		// Function when resource is loaded
-		function(texture) {
-		// do something with the texture
-		// Plane with default texture coordinates [0,1]x[0,1]
-		var texMat = new THREE.MeshBasicMaterial({
-		map: texture
-		});
-		var button = new THREE.Mesh(new THREE.CircleGeometry(2, 20), texMat);
-		button.position.set (button1.centerX, button1.centerY, 0);
-		sceneHUD.add(button);
-		},
-	);
-	
-	var buttonSize = halfH/3;
-	button = new THREE.Mesh (new THREE.CircleGeometry(1,32), 
+    	// resource URL
+    	'https://i.imgur.com/GKk4xDt.png',
+    	// Function when resource is loaded
+    	function(texture) {
+      		console.log ('texture loaded ...')
+			// texture load完，再建button
+			var buttonSize = halfH/3; // radius
+			button1 = new Button (halfW/2, -halfH/2, buttonSize, 'white', texture); 
+			sceneHUD.add (button1.mesh);
+    	},
+
+  	);
+	/*var buttonSize = halfH/3;
+	button = new THREE.Mesh (new THREE.PlaneGeometry(buttonSize, buttonSize), 
 			new THREE.MeshBasicMaterial({color:"yellow", transparent:true, opacity:0.8}));	
 	button1 = new Button (buttonSize, 0, -halfH/2);
-	//button.position.set (button1.centerX, button1.centerY, 0);
-	//sceneHUD.add (button);
+	button.position.set (button1.centerX, button1.centerY, 0);
+	sceneHUD.add (button);*/
 	
 	
 	////////////////////////////////////////////////////////////////////////////////
@@ -211,7 +210,7 @@ function init() {
 	let circle = new THREE.Mesh( geometry, material );
 	circle.rotation.x = -Math.PI/2;
 	group1.add( circle );
-
+	
 	//////////////////////////////////////////////////////////////////////////////////
 	//		render the whole thing on the page
 	//////////////////////////////////////////////////////////////////////////////////
@@ -224,10 +223,14 @@ function init() {
 		onResize()
 	})
 	
-	if (_iOSDevice)
-    	window.addEventListener('touchstart', onTouchStart, false);
+	if (_iOSDevice){
+		window.addEventListener('touchstart', onTouchStart, false);
+		window.addEventListener('touchend', onTouchEnd, false);
+	}
+    	
 	else
 		window.addEventListener ('mousedown', onMouseDown, false);
+		window.addEventListener ('mouseup', onMouseUp, false);
 
 }
 
@@ -240,16 +243,18 @@ function animate() {
 
 	renderer.clear();
 	renderer.render (scene, camera);
-	button.material.visible = markerRoot.visible;
+	button1.mesh.material.visible = markerRoot.visible;
 	renderer.render (sceneHUD, cameraHUD);
+	var dt = 0.05;
+	var maxOmega = 5;
 
-	if (cubeSpin){
-		omega = omega + 5*dt;  
-	} else {
-		omega = omega - .15*dt;    
+	if(isAction){
+		omega = omega+5*dt;
 	}
-		omega = clamp (omega, 0, maxOmega);
-	
+	else{
+		omega = omega-dt;
+	}
+	omega = clamp(omega,0,maxOmega);
 	
 	if((group1.rotation.y % (Math.PI*2)) >= 5/6*Math.PI & (group1.rotation.y % (Math.PI*2)) < 9/6*Math.PI){
 		document.getElementById('text').innerHTML = 'blue';
@@ -266,13 +271,19 @@ function animate() {
 		document.getElementById('text').style.color = 'red';
 	}
 	
-	
-	
-	angle += omega*dt;	
+	angle += omega*dt;
 	group1.rotation.y = angle;
 	
-}
+	renderer.render (scene, camera);	
 	
+}
+function clamp (x, xLo, xHi) {
+	if (x < xLo) return xLo;
+	if (x > xHi) return xHi;
+	else return x;
+}
+
+
 function onResize(){
 	arToolkitSource.onResize()	
 	arToolkitSource.copySizeTo(renderer.domElement)	
@@ -304,17 +315,26 @@ function onResize(){
 	
 function pickCompute (ndcX, ndcY) {
 
-	// use 2D algorithm 	
-	let dist = button1.dInfTo ([halfW * ndcX, halfH * ndcY]);	
-	$('#touch').text ('Mouse-dist-Button: ' + dist.toFixed(2))
+	// use 2D algorithm, in HUD-coord
+	let HUD_coord = [halfW*ndcX, halfH*ndcY]
+		
+	let dist = button1.d2To (HUD_coord);	
+	let printStr = [ dist.toFixed(2), HUD_coord[0].toFixed(2), HUD_coord[1].toFixed(2) ];
 	
-	if (dist < button1.size/2) {
+	$('#touch').text ( `[${printStr[0]}]: (${printStr[1]}, ${printStr[2]})`);
+	
+	if (dist < button1.size) {  // distance VS. radius
 		console.log ('picked')
-		cubeSpin = !cubeSpin;
+		isAction = !isAction;
 	} else {
 		console.log ('no hit')
 	}
 
+}
+
+function onMouseUp (event) {
+	// do nothing yet ...
+	isAction = false;
 }
 
 function onMouseDown (event) {
@@ -322,8 +342,10 @@ function onMouseDown (event) {
 	event.preventDefault();
 	let ndcX = (event.clientX / window.innerWidth) * 2 - 1;
 	let ndcY = -(event.clientY / window.innerHeight) * 2 + 1;
-
-	pickCompute (ndcX, ndcY);		
+	//state += 1;
+	pickCompute (ndcX, ndcY);	
+	if(state.length >0)
+		isAction = true;
 }	
 
 function onTouchStart (event) {
@@ -338,11 +360,17 @@ function onTouchStart (event) {
 		pickCompute (ndcX, ndcY);		
 		
 	}	
-}	
-function clamp (x, xLo, xHi) {
-	if (x < xLo) return xLo;
-  if (x > xHi) return xHi;
-  else return x;
+}
+
+function onTouchEnd (event) {
+	console.log ('in touch end')
+	event.preventDefault();
+   if (isAction) {
+        
+		isAction=!isAction;
+				
+		
+	}	
 }
 </script>
 </body>

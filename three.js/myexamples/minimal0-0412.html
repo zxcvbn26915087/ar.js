@@ -22,6 +22,8 @@ var renderer, scene, camera;
 var stats;
 var arToolKitSource, arToolKitContext;
 var markerHiro;
+var angle = 0;
+var pointLight;
 
 init();
 animate();
@@ -104,12 +106,15 @@ function addMarkerHiro(){
 
 	var artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
 		type : 'pattern',
-		patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.hiro'
+		patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/avengers.patt'
+//		patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.hiro'
 	})
 
 	// add a torus knot & a transparent box	
 	var geometry	= new THREE.TorusKnotGeometry(0.3,0.1,64,16);
-	var material	= new THREE.MeshNormalMaterial();
+	var material	= new THREE.MeshPhongMaterial(
+	 {color: 'yellow'}
+	);
 	var mesh	= new THREE.Mesh( geometry, material );
 	mesh.position.y	= 0.5
 	markerRoot.add (mesh);
@@ -117,7 +122,11 @@ function addMarkerHiro(){
 	mesh = new THREE.Mesh (new THREE.BoxGeometry(1,1,1), 
 				new THREE.MeshNormalMaterial({transparent:true, opacity:0.3}));
 	mesh.position.y	= 0.5
-	markerRoot.add (mesh);
+	//markerRoot.add (mesh);
+		
+	pointLight = new THREE.PointLight ();
+	pointLight.position.set (5,0,0);
+	markerRoot.add (pointLight);
 		
 	return markerRoot;
 }	
@@ -129,7 +138,11 @@ function animate() {
 	if( arToolkitSource.ready === false )	return
 	arToolkitContext.update( arToolkitSource.domElement )
 
-	markerHiro.children[0].rotation.x += 0.1;
+	pointLight.position.set (5*Math.cos(angle), 5, 5*Math.sin(angle));
+	angle += 0.05;
+	console.log (angle);
+	
+	//markerHiro.children[0].rotation.x += 0.1;
 	
 	renderer.render (scene, camera);	
 }

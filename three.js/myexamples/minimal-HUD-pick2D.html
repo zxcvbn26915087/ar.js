@@ -11,13 +11,25 @@
 	<a href="https://github.com/jeromeetienne/AR.js/" target="_blank">AR.js</a> - three.js mobile performance
 	<br/>
 	Contact me any time at <a href='https://twitter.com/jerome_etienne' target='_blank'>@jerome_etienne</a>
-</div><script>
+</div>
+
+<script>
 	//////////////////////////////////////////////////////////////////////////////////
 	//		Init
 	//////////////////////////////////////////////////////////////////////////////////
+var renderer, scene;
+var arToolKitSource, arToolKitContext;
+var cubeSpin;
+var sceneHUD;
+var stats;
+var markerRoot;
 
+init();
+animate();
+
+function init() {
 	// init renderer
-	var renderer	= new THREE.WebGLRenderer({
+	renderer	= new THREE.WebGLRenderer({
 		// antialias	: true,
 		alpha: true
 	});
@@ -29,21 +41,23 @@
 	renderer.domElement.style.left = '0px'
 	document.body.appendChild( renderer.domElement );
 	
+	///////////////////////////////////////////////////////////////////////////////////
 	// for multi-pass rendering
 	renderer.autoClear = false;
-	
-	
+		
 	// array of functions for the rendering loop
 	var onRenderFcts= [];
 
 	// init scene and camera
-	var scene	= new THREE.Scene();
-	
+	scene	= new THREE.Scene();
+
+/*	
 	/// for picking
 	var raycaster = new THREE.Raycaster();
 	var mouse = new THREE.Vector2();
 	var pickables = [];
-	var cubeSpin = false;
+*/
+	cubeSpin = false;
 	
 	// for HUD scene
 	// HUD area should be 1:1 on screen
@@ -58,24 +72,27 @@
 	var cameraHUD = new THREE.OrthographicCamera (-10,10,10,-10, -10,10);
 	var square = new THREE.Mesh (new THREE.PlaneGeometry(4,4), new THREE.MeshNormalMaterial());
 	
-	//console.log (HoverW)
-	square.position.set (6, -6, 0);
+	//square.position.set (6, -6, 0);
 	
 	
 	sceneHUD.add (square);
-	pickables.push (square);
+	//pickables.push (square);
 	
 	window.addEventListener ('mousedown', onMouseDown, false);
 	
 	function onMouseDown (event) {
 		event.preventDefault();
+		var mouse = {x:0, y:0};
   		mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   		mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
 		console.log (mouse);
+		var pickCenter = [0,0];	
+		var size = 2;
 		
 		// use 2D algorithm 
-		if (mouse.x < 0.8 && mouse.x > 0.4 && mouse.y < -0.4 && mouse.y > -0.8){
+		if (mouse.x < pickCenter[0]+size && mouse.x > pickCenter[0]-size 
+		 && mouse.y < pickCenter[1]+size && mouse.y > pickCenter[1]-size){
 			console.log ('picked')
 			cubeSpin = !cubeSpin;
   		} else {
@@ -102,14 +119,14 @@
 	//////////////////////////////////////////////////////////////////////////////////
 
 	// Create a camera
-	var camera = new THREE.Camera();
+	camera = new THREE.Camera();
 	scene.add(camera);
 
 	////////////////////////////////////////////////////////////////////////////////
 	//          handle arToolkitSource
 	////////////////////////////////////////////////////////////////////////////////
 
-	var arToolkitSource = new THREEx.ArToolkitSource({
+ arToolkitSource = new THREEx.ArToolkitSource({
 		// to read from the webcam 
 		sourceType : 'webcam',
 
@@ -143,7 +160,7 @@
 	
 
 	// create atToolkitContext
-	var arToolkitContext = new THREEx.ArToolkitContext({
+	 arToolkitContext = new THREEx.ArToolkitContext({
 		cameraParametersUrl: THREEx.ArToolkitContext.baseURL + '../data/data/camera_para.dat',
 		detectionMode: 'mono',
 		maxDetectionRate: 30,
@@ -156,19 +173,20 @@
 		camera.projectionMatrix.copy( arToolkitContext.getProjectionMatrix() );
 	})
 
+/*
 	// update artoolkit on every frame
 	onRenderFcts.push(function(){
 		if( arToolkitSource.ready === false )	return
 
 		arToolkitContext.update( arToolkitSource.domElement )
 	})
-	
+*/	
 	
 	////////////////////////////////////////////////////////////////////////////////
 	//          Create a ArMarkerControls
 	////////////////////////////////////////////////////////////////////////////////
 	
-	var markerRoot = new THREE.Group
+	var markerRoot = new THREE.Group();
 	scene.add(markerRoot)
 	var artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
 		type : 'pattern',
@@ -197,29 +215,41 @@
 	//markerRoot.add (gridXZ);
 	
 	//scene.add (gridXZ);
-
+/*
 	onRenderFcts.push(function(){
 		if (cubeSpin)
 			mesh.rotation.x += 0.1
 	})
-
+*/
 	
 	//////////////////////////////////////////////////////////////////////////////////
 	//		render the whole thing on the page
 	//////////////////////////////////////////////////////////////////////////////////
-	var stats = new Stats();
+	 stats = new Stats();
 	document.body.appendChild( stats.dom );
-	// render the scene
-	onRenderFcts.push(function(){
+	
+}	
+function animate() {	
+		if( arToolkitSource.ready === false )	return
+
+		arToolkitContext.update( arToolkitSource.domElement )
+
+	stats.update();
+	requestAnimationFrame (animate);
+
 		renderer.clear();
 		
 		renderer.render( scene, camera );
 		square.material.visible = markerRoot.visible;
-		renderer.render (sceneHUD, cameraHUD);
 		
-		stats.update();
-	})
+		if (markerRoot.visible)
+			renderer.render (sceneHUD, cameraHUD);
+			
+		if (cubeSpin)
+			mesh.rotation.x += 0.1
 
+		
+/*
 	// run the rendering loop
 	var lastTimeMsec= null
 	requestAnimationFrame(function animate(nowMsec){
@@ -234,5 +264,7 @@
 			onRenderFct(deltaMsec/1000, nowMsec/1000)
 		})
 	})
+*/
+}
 </script>
 </body>
